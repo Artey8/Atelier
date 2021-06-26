@@ -1,44 +1,106 @@
-const { Sequelize, DataTypes, Op } = require('sequelize');
+const express = require('express');
+const { getMultipleProducts, getSingleProduct } = require('../DATABASE/Products/controllers/dbQueries');
+const { getProductFeatures, getProductStyles } = require('../DATABASE/Products/controllers/dbQueries');
+const { getProductRelateds, getStyleSKUs } = require('../DATABASE/Products/controllers/dbQueries');
+const { getStylePhotos } = require('../DATABASE/Products/controllers/dbQueries');
 
-require('dotenv').config();
+const router = express.Router();
 
-const {
-  DB_PRODUCTS_TYPE,
-  DB_PRODUCTS_NAME,
-  DB_PRODUCTS_HOST,
-  DB_PRODUCTS_PORT,
-  DB_PRODUCTS_USER,
-} = process.env;
+router.get('/', (req, res) => {
+  const { page, count } = req.query;
+  const productStore = [];
 
-const sequelize = new Sequelize(`${DB_PRODUCTS_TYPE}://${DB_PRODUCTS_USER}@${DB_PRODUCTS_HOST}:${DB_PRODUCTS_PORT}/${DB_PRODUCTS_NAME}`);
-
-const Features = sequelize.define('Features', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    unique: true,
-  },
-  product_id: {
-    type: DataTypes.INTEGER,
-  },
-  feature: {
-    type: DataTypes.TEXT,
-  },
-  value: {
-    type: DataTypes.TEXT,
-  },
-}, {
-  timestamps: false,
+  getMultipleProducts(page, count)
+    .then((resVal) => {
+      resVal.forEach((product) => {
+        productStore.push(product);
+      });
+      res.status(200);
+      res.send(productStore);
+    })
+    .catch((rejVal) => {
+      res.status(404);
+      res.send(rejVal);
+    });
 });
 
-Features.findAll({
-  where: {
-    product_id: {
-      [Op.lt]: 2000,
-    },
-  },
-})
-  .then((resVal) => {
-    console.log(resVal);
-    sequelize.close();
-  });
+router.get('/:id(\\d+$)', (req, res) => {
+  const productId = req.params.id;
+  const featureStore = [];
+  let productStore = {};
+
+  Promise.all([getSingleProduct(productId), getProductFeatures(productId)])
+    .then(([productDetails, productFeatures]) => {
+      productFeatures.forEach((feature) => {
+        featureStore.push(feature.dataValues);
+      });
+      productStore = {
+        ...productDetails[0].dataValues,
+        features: featureStore,
+      };
+      res.status(200);
+      res.send(productStore);
+    })
+    .catch((rejVal) => {
+      res.status(404);
+      res.send(rejVal);
+    });
+});
+
+router.get('/:id(\\d+)/styles', (req, res) => {
+  const productId = req.params.id;
+  const styleRange = [];
+  const styleCache = {};
+  getProductStyles(productId)
+    .then((resVal) => {
+      resVal.forEach((style) => {
+        styleCache[style.dataValues.id] = {
+          ...style.dataValues,
+          skus: [],
+          photos: [],
+        };
+        styleRange.push(style.dataValues.id);
+      });
+      return Promise.all([getStyleSKUs(styleRange), getStylePhotos(styleRange)]);
+    })
+    .then(([skuVals, photoVals]) => {
+      skuVals.forEach((sku) => {
+        styleCache[sku.dataValues.style_id].skus.push({
+          size: sku.dataValues.size,
+          quantity: sku.dataValues.quantity,
+        });
+      });
+      photoVals.forEach((photo) => {
+        styleCache[photo.dataValues.style_id].photos.push({
+          url: photo.dataValues.url,
+          thumbnail_url: photo.dataValues.thumbnail_url,
+        });
+      });
+      res.status(200);
+      res.send(Object.values(styleCache));
+    })
+    .catch((rejVal) => {
+      res.status(404);
+      res.send(rejVal);
+    });
+});
+
+router.get('/:id(\\d+)/related', (req, res) => {
+  const productId = req.params.id;
+  const relatedStore = [];
+
+  getProductRelateds(productId)
+    .then((resVal) => {
+      resVal.forEach((item) => {
+        relatedStore.push(item.dataValues.related_product_id);
+      });
+      res.status(200);
+      res.send(relatedStore);
+    })
+    .catch((rejVal) => {
+      res.status(404);
+      res.send(rejVal);
+    });
+});
+
+module.exports = router;

@@ -1,6 +1,15 @@
-const Sequelize = require('sequelize');
-const config = require('../config');
+const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize(`postgres://${config.username}@${config.host}:${config.port}/${config.database}`);
+require('dotenv').config();
+
+const {
+  DB_QUESTIONS_TYPE,
+  DB_QUESTIONS_NAME,
+  DB_QUESTIONS_HOST,
+  DB_QUESTIONS_PORT,
+  DB_QUESTIONS_USER,
+} = process.env;
+
+const sequelize = new Sequelize(`${DB_QUESTIONS_TYPE}://${DB_QUESTIONS_USER}@${DB_QUESTIONS_HOST}:${DB_QUESTIONS_PORT}/${DB_QUESTIONS_NAME}`);
 
 module.exports.sequelize = sequelize;

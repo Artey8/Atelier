@@ -14,6 +14,7 @@ const CharacteristicReview = sequelize.define('CharacteristicReview', {
     type: DataTypes.INTEGER,
     primaryKey: true,
     unique: true,
+    autoIncrement: true,
   },
   characteristic_id: {
     type: DataTypes.INTEGER,

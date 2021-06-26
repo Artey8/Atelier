@@ -5,7 +5,7 @@ const { Features } = require('../models/features');
 const { Skus } = require('../models/skus');
 const { Photos } = require('../models/photos');
 const { Relateds } = require('../models/related');
-const { loadData } = require('../elt/ProductsETL');
+const { loadData, indexData } = require('../elt/ProductsETL');
 
 const synchronize = async () => {
   try {
@@ -27,6 +27,7 @@ const initialize = async () => {
     console.log('Connection has been established successfully.');
     await synchronize();
     await loadData();
+    await indexData();
     // await transformData();
     sequelize.close();
   } catch (error) {

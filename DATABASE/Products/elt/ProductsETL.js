@@ -25,6 +25,19 @@ const loadData = async () => {
   }
 };
 
+const indexData = async () => {
+  try {
+    await sequelize.query('CREATE INDEX products_idx ON "Products" (product_id)');
+    await sequelize.query('CREATE INDEX styles_idx ON "Styles" (product_id)');
+    await sequelize.query('CREATE INDEX features_idx ON "Features" (product_id)');
+    await sequelize.query('CREATE INDEX skus_idx ON "Skus" (style_id)');
+    await sequelize.query('CREATE INDEX photos_idx ON "Photos" (style_id)');
+    await sequelize.query('CREATE INDEX current_products_idx ON "Relateds" (current_product_id)');
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const transformData = async () => {
   try {
     await sequelize.query('UPDATE "Features" SET product_id = product_id + 17066 WHERE product_id > 0');
@@ -40,4 +53,5 @@ const transformData = async () => {
 };
 
 module.exports.loadData = loadData;
+module.exports.indexData = indexData;
 module.exports.transformData = transformData;

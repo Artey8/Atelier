@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db');
-// const { Review } = require('./review');
 
 /**
  * ReviewPhoto has a foreign key constraint commented out. The query to copy the prexisting
@@ -12,6 +11,7 @@ const ReviewPhoto = sequelize.define('ReviewPhoto', {
     type: DataTypes.INTEGER,
     primaryKey: true,
     unique: true,
+    autoIncrement: true,
   },
   review_id: {
     type: DataTypes.INTEGER,
